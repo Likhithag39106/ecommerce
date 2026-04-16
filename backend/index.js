@@ -1,29 +1,27 @@
 const express= require("express")
-const router=express.Router() 
-const bcrypt=require("bcrypt")
-const jwt= require("jsonwebtoken")
-const User= require("../models/User")
+const mongoose= require("mongoose")
+const app= express()
+const cors = require("cors")
+require("dotenv").config()
+const authRoutes=require("./routes/authRoutes")
+const productRoutes=require("./routes/productRoutes")
 
-router.post("/register",async (req,res)=>{
-    try{
-        const {name,email,password,mobile}=req.body 
-        console.log("----------",name,email,password,mobile)
-        const existingUser= await User.findOne({email})
+app.use(cors())
+app.use(express.json())
+app.use(express.urlencoded({
+    extended:true
+}))
+mongoose.connect(process.env.MONGODB_URL)
+    .then(()=>{
+        console.log("DB connected")
+    })
+    .catch((err)=>{
+        console.log(err)
+    })
 
-        if(existingUser){
-            return res.status(401).json({message:"User already exists"})
-        }
-        const hashedPassword=await bcrypt.hash(password,10)
-        const user=await User.create({
-            name,email,password:hashedPassword,mobile
-        })
-        return res.status(201).json({message:"User created successfully"})
-    }
-    catch(err){
-        console.log("error from register",err)
-        return res.status(500).json({message:"Error in server"})
-    }
+app.get("/",(req,res)=>{
+    res.json({message:"server is running"})
 })
-
-
-module.exports=router
+app.use("/api/auth",authRoutes)
+app.use("/api/product",productRoutes)
+app.listen(5000,()=>console.log("server runns on port 5000"))
